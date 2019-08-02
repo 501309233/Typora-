@@ -2,8 +2,6 @@
 
 Spring Security是强大的，且容易定制的实现认证与授权的基于spring开发的框架
 
- 
-
 # Spring Security的功能：
 
 Authentivcation:认证，就是用户登录
