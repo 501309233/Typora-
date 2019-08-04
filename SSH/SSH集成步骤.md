@@ -182,3 +182,105 @@ hibernate.format_sql = true
 hibernate.hbm2ddl.auto = update
 ```
 
+7. 测试框架顶不顶用
+
+   ```java
+   //在model中
+   @Entity
+   @Table(name = "chat_content")
+   public class ChatContent {
+       @Id
+       @GeneratedValue(strategy = GenerationType.AUTO)
+       private Integer id;
+   
+       @Column
+       private String content;
+   
+       public Integer getId() {
+           return id;
+       }
+   
+       public void setId(Integer id) {
+           this.id = id;
+       }
+   
+       public String getContent() {
+           return content;
+       }
+   
+       public void setContent(String content) {
+           this.content = content;
+       }
+   }
+   ```
+
+   
+
+```java
+
+//在dao中
+@Repository
+public class ChatDao {
+    @Autowired
+    private SessionFactory sessionFactory;
+
+
+    public void saveContent(ChatContent chatContent){
+        Session session=sessionFactory.openSession();
+        session.save(chatContent);
+    }
+}
+
+```
+
+```java
+//在service中
+@Service
+public class ChatService {
+    @Autowired
+    private ChatDao chatDao;
+
+    public void saveContent(ChatContent chatContent){
+        chatDao.saveContent(chatContent);
+    }
+}
+
+```
+
+```java
+
+//在controller中
+@Controller
+public class ChatController {
+    @Autowired
+    public ChatService chatService;
+
+    @RequestMapping("hello")
+    public String init(){
+        ChatContent chatContent = new ChatContent();
+        chatContent.setContent("Hello World");
+        chatContent.setId(1);
+        chatService.saveContent(chatContent);
+        System.out.println(chatContent.getContent());
+        return "index";
+    }
+
+}
+
+```
+
+在WEB-INF/views/创建index.jsp
+
+```jsp
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<html>
+<head>
+    <title>hello</title>
+</head>
+<body>
+<h1>hello world</h1>
+</body>
+</html>
+```
+
+开启服务器，输入映射路径/hello来测试数据库和网页是否正常
