@@ -1,2 +1,2 @@
-[关于Ajax与Controller的数据交互](https://www.cnblogs.com/kasi/p/8443289.html)
+![1565172800564](E:\Typora笔记\JS\assets\1565172800564.png)
 
