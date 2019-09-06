@@ -27,8 +27,24 @@ CREATE TABLE `qsx_promo` (
 
 ```
 
-引入促销活动模块
 
-创建实体类PromoProductDTO extends ProductDTO
 
-引入促销活动聚合模型
+改变了引入商品列表的策略：
+
+原版：直接引入商品列表
+
+改版：查询活动列表获取有活动信息的商品
+
+（不需要创建实体类PromoProductDTO，只需要在活动实体类PromoModel中）
+
+
+
+2019年9月2日22点01分
+
+做到了promoController这里，要把数据抛到前端接收渲染
+
+
+
+2019年9月5日09点54分
+
+秒杀前端页面数据传输和页面设计完毕
