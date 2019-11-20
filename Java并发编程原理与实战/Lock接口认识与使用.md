@@ -43,3 +43,41 @@ public class MultiThreadMain {
 
 # 自己实现一个锁Lock
 
+```java
+public class MyLock implements Lock {
+
+    private boolean isLocked = false;
+
+    Thread lockBy = null;
+    int lockCount=0;
+    @Override
+    public synchronized void lock() {
+
+        Thread currentThread = Thread.currentThread();
+
+        while (isLocked&&currentThread!=lockBy){
+            try{
+                wait();
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        isLocked = true;
+        lockBy = currentThread;
+        lockCount++;
+
+    }
+
+    @Override
+    public synchronized void unlock() {
+        if (lockBy==Thread.currentThread()){
+            lockCount--;
+            if (lockCount==0){
+                isLocked=false;
+                notify();
+            }
+        }
+
+    }
+}
+```
