@@ -84,6 +84,43 @@ a()和b()都是是对象锁，当线程访问a()时，已经拿到了对象锁�
 
 只有读线程执行完毕，写线程才能执行
 
+读写锁需要保存的状态：
+
+* 读锁的个数
+* 写锁重入的次数
+* 每个读锁重入的次数
+
+```Java
+public class Demo   {
+    private Map<String,Object> map = new HashMap<>();
+    private ReadWriteLock rwl = new ReentrantReadWriteLock();
+
+    private Lock r = rwl.readLock();
+    private Lock w = rwl.writeLock();
+
+    public Object get(String key){
+        r.lock();
+        try {
+            return map.get(key);
+        }finally {
+            r.unlock();
+        }
+    }
+
+    public void put(String key,Object value){
+        w.lock();
+        try{
+            map.put(key, value);
+        }finally {
+            w.unlock();
+        }
+    }
+}
+```
+
+* 锁降级：写锁降级为读锁，在写锁没有释放的时候获取读锁，然后再释放写锁
+* 锁升级：（Reentrant不支持）读锁升级为写锁，读锁没有释放的时候获取写锁，然后再释放读锁 。
+
 ### 修饰普通方法
 
 内置锁就是当前类的实例（对象锁）
