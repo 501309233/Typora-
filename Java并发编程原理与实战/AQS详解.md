@@ -3,8 +3,6 @@
 用AQS重写自己的锁
 
 ```Java
-package com.mofeng.thread.mylock;
-
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.AbstractQueuedSynchronizer;
 import java.util.concurrent.locks.Condition;
