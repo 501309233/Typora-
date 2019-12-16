@@ -280,7 +280,7 @@ public class MyAppConfig {
 }
 ```
 
-# 配置文件占位符
+# 四、配置文件占位符
 
 ## 1、随机数
 
@@ -301,4 +301,349 @@ person.dog.name=${person.hello:hello}_dog
 ~~~
 
 person.dog.name会输出：hello_dog
+
+# 五、profile
+
+Profile是Spring对不同环境提供不同配置功能的支持，可以通过激活、指定参数等方式快速切换环境
+
+## 1、多profile文件形式：
+
+* 格式：application-{profile}.properties:
+  * application-dev.properties、application-prod.properties
+
+我们在主配置文件编写的时候，文件名可以是application-{profile}.properties(yml)
+
+默认使用application.properties的配置；
+
+## 2、多profile文档块模式(yml)：
+
+```yaml
+spring:
+  profiles:
+    active: prod
+server:
+  port: 8081
+---
+server: 
+  port: 8082
+spring:
+  profiles: dev
+---
+server:
+  port: 8083
+spring:
+  profiles: prod	#指定属于哪个环境
+```
+
+## 3、激活方式：
+
+* 命令行  --spring.profiles.active=dev
+* 配置文件(application.properties)中指定 spring.profiles.active=dev
+* jvm参数 -Dspring.profiles.active=dev
+
+# 六、配置文件加载位置
+
+SpringBoot启动会扫描一下位置的application.properties或者application.yml文件作为SpringBoot的默认配置文件
+
+* File:./config/
+* File:./
+* classpath:/config/
+* classpath:/
+* 以上是按照优先级从高到低的顺序，所有位置的文件都会被加载，**高优先级配置内容会覆盖低优先级配置内容**，还可以高优先级和低优先级互补配置
+* 我们也可以通过配置spring.config.location来改变默认配置：
+
+项目打包好以后，我们可以使用命令行参数的形式，启动项目的时候来指定配置文件的新位置；指定配置文件和默认加载的这些配置文件共同起作用形成互补配置
+
+
+
+# 七、外部配置加载顺序
+
+SpringBoot支持多种外部配置方式
+
+这些方式优先级从高到低：
+
+1. **命令行参数**
+
+   多个配置参数用空格分开；--配置项=值 
+
+2. 来自java:comp/env的JNDI属性
+
+3. Java系统属性（System.getProperties()）
+
+4. 操作系统环境变量
+
+5. RandomValuePropertySource配置的random.*属性值
+
+6. **jar包外部的application-{profile}.properties或application.yml(带spring.profile)配置文件**
+
+7. **jar包内部的application-{profile}.properties或application.yml(带spring.profile)配置文件**
+
+8. **jar包外部的application.properties或application.yml(不带spring.profile)配置文件**
+
+9. **jar包内部的application.properties或application.yml(不带spring.profile)配置文件**
+
+10. @Configuration注解类上的@PropertySource
+
+11. 通过SpringApplication.setDefaultProperties指定的默认属性
+
+==高优先级的配置覆盖低优先级的配置，所有的配置会形成互补配置==
+
+==优先加载带profile；由jar包外向jar包内进行寻找==
+
+# 八、自动配置的原理
+
+1、可以查看HttpEncodingAutoConfiguration
+
+
+
+2、通用模式
+
+* xxxAutoConfiguration:自动配置类
+* xxxProperties:属性配置类
+* yml/properties文件中能配置的值就来源于[属性配置类]
+
+3、几个重要的注解
+
+* @Bean
+* @Conditional
+
+4、--debug查看详细的自动配置报告
+
+# 八、自动配置原理
+
+配置文件到低能写什么？怎么写？自动配置原理：
+
+配置文件能配置的属性：
+
+https://docs.spring.io/spring-boot/docs/2.2.2.RELEASE/reference/pdf/spring-boot-reference.pdf
+
+10. Appendices
+
+
+
+自动配置原理：
+
+1）SpringBoot启动的时候加载主配置类，开启了自动配置功能@EnableAutoConfiguration
+
+2）@EnableAutoConfiguration作用：
+
+* 利用EnableAutoConfigurationImportSelector给容器中导入一些组件
+
+* 可以查看selectImports()方法的内容；
+
+* List<String>configurations = getCandidateConfigurations(annotationMetadata,attributes);获取候选的配置
+
+  * ```java
+    SpringFactoriesLoader.loadFactoryNames()
+    扫描所有jar包类路径下META-INF/spring.factories
+    把扫描到的这些文件的内容包装成properties对象
+    从properties中获取到EnableAutoConfiguration.class类（类名）对应的值，然后把他们添加到容器中
+    ```
+
+    将类路径下META-INF/spring.factories 里面配置的所有EnableAutoConfiguration的值加入到了容器中；
+
+    ```properties
+    # PropertySource Loaders
+    org.springframework.boot.env.PropertySourceLoader=\
+    org.springframework.boot.env.PropertiesPropertySourceLoader,\
+    org.springframework.boot.env.YamlPropertySourceLoader
+    
+    # Run Listeners
+    org.springframework.boot.SpringApplicationRunListener=\
+    org.springframework.boot.context.event.EventPublishingRunListener
+    
+    # Error Reporters
+    org.springframework.boot.SpringBootExceptionReporter=\
+    org.springframework.boot.diagnostics.FailureAnalyzers
+    
+    # Application Context Initializers
+    org.springframework.context.ApplicationContextInitializer=\
+    org.springframework.boot.context.ConfigurationWarningsApplicationContextInitializer,\
+    org.springframework.boot.context.ContextIdApplicationContextInitializer,\
+    org.springframework.boot.context.config.DelegatingApplicationContextInitializer,\
+    org.springframework.boot.rsocket.context.RSocketPortInfoApplicationContextInitializer,\
+    org.springframework.boot.web.context.ServerPortInfoApplicationContextInitializer
+    
+    # Application Listeners
+    org.springframework.context.ApplicationListener=\
+    org.springframework.boot.ClearCachesApplicationListener,\
+    org.springframework.boot.builder.ParentContextCloserApplicationListener,\
+    org.springframework.boot.cloud.CloudFoundryVcapEnvironmentPostProcessor,\
+    org.springframework.boot.context.FileEncodingApplicationListener,\
+    org.springframework.boot.context.config.AnsiOutputApplicationListener,\
+    org.springframework.boot.context.config.ConfigFileApplicationListener,\
+    org.springframework.boot.context.config.DelegatingApplicationListener,\
+    org.springframework.boot.context.logging.ClasspathLoggingApplicationListener,\
+    org.springframework.boot.context.logging.LoggingApplicationListener,\
+    org.springframework.boot.liquibase.LiquibaseServiceLocatorApplicationListener
+    
+    # Environment Post Processors
+    org.springframework.boot.env.EnvironmentPostProcessor=\
+    org.springframework.boot.cloud.CloudFoundryVcapEnvironmentPostProcessor,\
+    org.springframework.boot.env.SpringApplicationJsonEnvironmentPostProcessor,\
+    org.springframework.boot.env.SystemEnvironmentPropertySourceEnvironmentPostProcessor,\
+    org.springframework.boot.reactor.DebugAgentEnvironmentPostProcessor
+    
+    # Failure Analyzers
+    org.springframework.boot.diagnostics.FailureAnalyzer=\
+    org.springframework.boot.diagnostics.analyzer.BeanCurrentlyInCreationFailureAnalyzer,\
+    org.springframework.boot.diagnostics.analyzer.BeanDefinitionOverrideFailureAnalyzer,\
+    org.springframework.boot.diagnostics.analyzer.BeanNotOfRequiredTypeFailureAnalyzer,\
+    org.springframework.boot.diagnostics.analyzer.BindFailureAnalyzer,\
+    org.springframework.boot.diagnostics.analyzer.BindValidationFailureAnalyzer,\
+    org.springframework.boot.diagnostics.analyzer.UnboundConfigurationPropertyFailureAnalyzer,\
+    org.springframework.boot.diagnostics.analyzer.ConnectorStartFailureAnalyzer,\
+    org.springframework.boot.diagnostics.analyzer.NoSuchMethodFailureAnalyzer,\
+    org.springframework.boot.diagnostics.analyzer.NoUniqueBeanDefinitionFailureAnalyzer,\
+    org.springframework.boot.diagnostics.analyzer.PortInUseFailureAnalyzer,\
+    org.springframework.boot.diagnostics.analyzer.ValidationExceptionFailureAnalyzer,\
+    org.springframework.boot.diagnostics.analyzer.InvalidConfigurationPropertyNameFailureAnalyzer,\
+    org.springframework.boot.diagnostics.analyzer.InvalidConfigurationPropertyValueFailureAnalyzer
+    
+    # FailureAnalysisReporters
+    org.springframework.boot.diagnostics.FailureAnalysisReporter=\
+    org.springframework.boot.diagnostics.LoggingFailureAnalysisReporter
+    
+    ```
+
+    每一个这样的xxxAutoConfiguration类都是容器中的一个组件，都加入到容器中；用他们来做自动配置
+
+3）每一个自动配置类进行自动配置功能；
+
+4）以**HttpEncodingAutoConfiguration**（Http编码自动配置）为例解释自动配置原理
+
+```java
+@Configuration(		//表示这是一个配置类，以前编写的配置文件一样，也可以给容器中添加组件
+    proxyBeanMethods = false
+)
+//启动ConfigurationProperties功能，将配置文件中对应的值和HttpEncodingProperties绑定起来；并把HttpEncodingProperties加入到ioc容器中
+@EnableConfigurationProperties({HttpProperties.class})
+//Spring底层@Conditional注解，根据不同的条件，如果满足指定的条件，，整个配置类里面的配置就会生效；判断当前应用是否是web应用，如果是，当前配置类生效
+@ConditionalOnWebApplication(
+    type = Type.SERVLET
+)
+//判断当前项目有没有这个类；CharacterEncodingFilter；SpringMVC中进行乱码解决的过滤器
+@ConditionalOnClass({CharacterEncodingFilter.class})
+//判断配置文件中是否存在某个配置 spring.http.encoding.enabled；如果不存在，判断也是成立的
+//即使我们配置文件中不配置spring.http.encoding.enabled=true，也是默认生效的
+@ConditionalOnProperty(
+    prefix = "spring.http.encoding",
+    value = {"enabled"},
+    matchIfMissing = true
+)
+public class HttpEncodingAutoConfiguration {
+  //它已经和SpringBoot的配置文件映射了
+   private final Encoding properties;
+
+  //只有一个有参构造器的情况下，参数的值就从容器中拿
+    public HttpEncodingAutoConfiguration(HttpProperties properties) {
+        this.properties = properties.getEncoding();
+    }
+
+  //给容器中添加组件，这个组件中的某些值要从properties中获取
+    @Bean
+    @ConditionalOnMissingBean
+    public CharacterEncodingFilter characterEncodingFilter() {
+        CharacterEncodingFilter filter = new OrderedCharacterEncodingFilter();
+        filter.setEncoding(this.properties.getCharset().name());
+        filter.setForceRequestEncoding(this.properties.shouldForce(org.springframework.boot.autoconfigure.http.HttpProperties.Encoding.Type.REQUEST));
+        filter.setForceResponseEncoding(this.properties.shouldForce(org.springframework.boot.autoconfigure.http.HttpProperties.Encoding.Type.RESPONSE));
+        return filter;
+    }
+
+```
+
+根据当前不同的条件判断，决定这个类是否生效
+
+一旦这个配置类生效；这个配置类就会给容器中添加各种组件；这些组件的属性是从对应的properties类中获取的，这些类里面的每一个属性又是和配置文件绑定的
+
+
+
+5）在配置文件中能配置的属性都是在xxxProperties类中封装着；配置文件能配置什么就可以参照某个功能对应的这个属性类
+
+```java
+//从配置文件中获取指定的值和bean的属性进行绑定
+@ConfigurationProperties(
+    prefix = "spring.http"
+)
+public class HttpProperties {
+    private boolean logRequestDetails;
+    private final HttpProperties.Encoding encoding = new HttpProperties.Encoding();
+```
+
+```properties
+#我们能配置的属性都是来源于这个功能的properties
+spring.http.encoding.enabled=true
+spring.http.encoding.charset=utf-8
+spring.http.encoding.force=ture
+```
+
+
+
+## **精髓：**
+
+* **SpringBoot启动会加载大量的自动配置类**
+* **我们看我们需要的功能有没有SpringBoot默认写好的自动配置类**
+* **我们再来看这个自动配置类中到底配置了哪些组件；（只要我们要用的组件由，我们就不需要再来配置了）**
+* **给容器中自动配置类添加组件的时候，会从properties类中获取某些属性，我们就可以在配置文件中指定这些属性的值**
+
+xxxAutoConfiguration；自动配置类；它给容器中添加组件
+
+xxxProperties：封装配置文件中相关属性；
+
+## 细节：
+
+### @Conditional
+
+作用：必须是@Conditional指定的条件成立，才给容器中添加组件，配置里面的所有内容才生效
+
+| @Conditional扩展注解            | 作用（判断是否满足当前指定条件）                 |
+| ------------------------------- | ------------------------------------------------ |
+| @ConditionalOnJava              | 系统的Java版本是否符合要求                       |
+| @ConditionalOnBean              | 容器中存在指定Bean                               |
+| @ConditionalOnMissiongBean      | 容器中不存在指定Bean                             |
+| @ConditionalOnExpression        | 满足SpEL表达式指定                               |
+| @ConditionalOnClass             | 系统中有指定的类                                 |
+| @ConditionalOnMissiongClass     | 系统中没有指定的类                               |
+| @ConditionalOnSingleCandidate   | 容器中只有一个指定的Bean，或者这个Bean是首选Bean |
+| @ConditionalOnProperty          | 系统中指定的属性是否有指定的值                   |
+| @ConditionalOnResource          | 类路径下是否存在指定资源文件                     |
+| @ConditionalOnWebApplication    | 当前是web环境                                    |
+| @ConditionalOnNotWebApplication | 当前不是web环境                                  |
+| @ConditionalOnJndi              | JNDI存在指定向                                   |
+
+**自动配置类必须在一定的条件下才能生效**
+
+在配置文件中写
+
+```properties
+#开启SpringBoot的debug
+debug=true
+```
+
+控制台会打印自动配置报告，这样我们就会很方便的知道那些自动配置类生效
+
+```java
+============================
+CONDITIONS EVALUATION REPORT
+============================
+  Positive matches:
+-----------------
+//启用的
+   AopAutoConfiguration matched:
+      - @ConditionalOnProperty (spring.aop.auto=true) matched (OnPropertyCondition)
+        
+  Negative matches:
+-----------------
+//没有启用的
+   ActiveMQAutoConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'javax.jms.ConnectionFactory' (OnClassCondition)
+
+   AopAutoConfiguration.AspectJAutoProxyingConfiguration:
+      Did not match:
+         - @ConditionalOnClass did not find required class 'org.aspectj.weaver.Advice' (OnClassCondition)
+
+
+```
 
