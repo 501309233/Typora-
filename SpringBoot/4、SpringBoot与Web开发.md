@@ -395,3 +395,14 @@ SpringBoot对SpringMVC对自动配置不需要了，所有都是我们自己配�
 * SpringBoot在自动配置很多组件的时候，先看容器中有没有用户自己配置的（@Bean，@Component）如果有就用用户配置的，如果没有，才自动配置；如果有些组件可以有多个（ViewResolver）将用户配置的和自己默认配置的组合起来
 
 * 中SpringBoot中会有非常多的xxxCOnfigure帮助我们进行扩展配置
+
+# 六、RestfulCRUD
+
+## 1）默认访问首页，引入静态资源
+
+
+
+## 2）国际化
+
+
+
