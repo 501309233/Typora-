@@ -398,11 +398,368 @@ SpringBoot对SpringMVC对自动配置不需要了，所有都是我们自己配�
 
 # 六、RestfulCRUD
 
-## 1）默认访问首页，引入静态资源
+## 1、默认访问首页，引入静态资源
 
 
 
-## 2）国际化
+## 2、国际化
+
+Springmvc的话
+
+1）编写国际化配置文件
+
+2）使用ResourceBundleMessageSource管理国际化文件
+
+3）在页面使用fmt:message取出国际化内容
+
+SpringBoot:
+
+1)编写国际化配置文件，抽取页面需要显示的国际化消息
+
+![image-20191226181154323](assets/image-20191226181154323.png)
+
+2）SpringBoot自动配置好了管理国际化资源文件的组件
+
+```java
+@EnableConfigurationProperties
+public class MessageSourceAutoConfiguration {
+
+   private static final Resource[] NO_RESOURCES = {};
+
+   @Bean
+   @ConfigurationProperties(prefix = "spring.messages")
+   public MessageSourceProperties messageSourceProperties() {
+      return new MessageSourceProperties();
+   }
+  
+  
+  //在MessageSourceProperties中
+  /**
+	 * Comma-separated list of basenames (essentially a fully-qualified classpath
+	 * location), each following the ResourceBundle convention with relaxed support for
+	 * slash based locations. If it doesn't contain a package qualifier (such as
+	 * "org.mypackage"), it will be resolved from the classpath root.
+	 */
+  //我们的配置文件可以直接放在类路径下叫messages.properties
+	private String basename = "messages";
+  
+  @Bean
+	public MessageSource messageSource(MessageSourceProperties properties) {
+		ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
+		if (StringUtils.hasText(properties.getBasename())) {
+      //设置国际化资源文件的基础名（去掉语言国家代码）
+      //如login_zh_CN.properties-->package.login
+			messageSource.setBasenames(StringUtils
+					.commaDelimitedListToStringArray(StringUtils.trimAllWhitespace(properties.getBasename())));
+		}
+		if (properties.getEncoding() != null) {
+			messageSource.setDefaultEncoding(properties.getEncoding().name());
+		}
+		messageSource.setFallbackToSystemLocale(properties.isFallbackToSystemLocale());
+		Duration cacheDuration = properties.getCacheDuration();
+		if (cacheDuration != null) {
+			messageSource.setCacheMillis(cacheDuration.toMillis());
+		}
+		messageSource.setAlwaysUseMessageFormat(properties.isAlwaysUseMessageFormat());
+		messageSource.setUseCodeAsDefaultMessage(properties.isUseCodeAsDefaultMessage());
+		return messageSource;
+	}
+```
+
+前端代码写为
+
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>登录页面</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="#" th:href="@{/webjars/bootstrap/3.3.7-1/css/bootstrap.css}" rel="stylesheet" />
+
+    <!-- Custom styles for this template -->
+    <link href="/css/signin.css" th:href="@{/css/signin.css}" rel="stylesheet" />
+  </head>
+
+  <body class="text-center" th:inline="text">
+    <form class="form-signin" th:action="@{/user/login}" method="post">
+      <img class="mb-4" src="./login_files/bootstrap-solid.svg" th:src="@{/img/bootstrap-solid.svg}" alt="" width="72" height="72" />
+      <h1 class="h3 mb-3 font-weight-normal" >[[#{login.tip}]]</h1>
+        <!--判断-->
+        <p style="color: red" th:text="${msg}" th:if="${not #strings.isEmpty(msg)}"></p>
+      <!--注意下面国际化的使用方法#{}-->
+      <label  class="sr-only" th:text="#{login.username}">Username</label>
+      <input type="text"  name="username" class="form-control" placeholder="Username" th:placeholder="#{login.username}" required="" autofocus=""/>
+      <label for="inputPassword" class="sr-only" th:text="#{login.password}">Password</label>
+      <input type="password" name="password" id="inputPassword" class="form-control" placeholder="Password" th:placeholder="#{login.password}" required="" />
+      <div class="checkbox mb-3">
+        <label >
+          <input type="checkbox" value="remember-me" /> [[#{login.remember}]]
+        </label>
+      </div>
+      <button class="btn btn-lg btn-primary btn-block" type="submit" th:text="#{login.btn}">Sign in</button>
+      <p class="mt-5 mb-3 text-muted">© 2017-2018</p>
+        <a href="#" class="btn btn-sm" >中文</a>
+        <a href="#" class="btn btn-sm" >English</a>
+    </form></body></html>
+```
+
+效果：根据浏览器语言设置的信息切换了国际化
 
 
+
+原理：
+
+​	国际化Locale（区域信息对象）；localeResolver（获取区域信息对象）
+
+默认的就是根据请求头带来的区域信息获取Locale进行国际化
+
+4）点击链接切换国际化
+
+```java
+package com.mofeng.restfulcrud.component;
+
+/**实现LocaleResolver
+ * 可以在链接上切换国际化
+ */
+
+public class MyLocaleResolver implements LocaleResolver {
+    @Override
+    public Locale resolveLocale(HttpServletRequest request) {
+        String l = request.getParameter("l");
+        Locale locale = Locale.getDefault();
+        if (!StringUtils.isEmpty(l)){
+            String [] split = l.split("_");
+            locale = new Locale(split[0],split[1]);
+        }
+        return locale;
+    }
+
+    @Override
+    public void setLocale(HttpServletRequest request, HttpServletResponse response, Locale locale) {
+
+    }
+}
+
+//然后加入容器中（在@Configuration中添加）
+  @Bean
+    public LocaleResolver localeResolver(){
+        return new MyLocaleResolver();
+    }
+```
+
+## 3、登录
+
+开发期间模板引擎页面修改以后，要实时生效
+
+* 禁用模板引擎的缓存
+
+```properties
+#禁用模板引擎的缓存
+spring.thymeleaf.cache=false
+```
+
+* 页面修改完成以后ctrl+f9重新编译
+
+
+
+登录错误的提示
+
+```html
+<p style="color: red" th:text="${msg}" th:if="${not #strings.isEmpty(msg)}"></p>
+```
+
+* 为了防止重复提交表单，对**登陆的表单请求做重定向**
+
+  在controller中定义响应的登录方法
+
+```java
+@PostMapping(value = "/user/login")
+public String login(@RequestParam("username") String username,
+                    @RequestParam("password") String password,
+                    Map<String,Object> map, HttpSession session
+                    ){
+    if (!StringUtils.isEmpty(username)&&"123456".equals(password)){
+        session.setAttribute("loginUser",username);
+      //重定向的写法！！
+        return "redirect:/welcome.html";
+    }else {
+        map.put("msg","用户名密码错误!");
+        return "login";
+    }
+}
+
+```
+
+​	在自定义配置中添加一个路径映射
+
+```java
+@Override
+public void addViewControllers(ViewControllerRegistry registry) {
+    registry.addViewController("/index.html").setViewName("login");
+ //在此添加重定向的路径
+ registry.addViewController("/welcome.html").setViewName("dashboard");
+}
+```
+
+​	成功登录以后的效果是：浏览器的地址为：http://127.0.0.1:8080/**welcome.html**
+
+## 4、拦截器进行登录检查
+
+（为防止有人未经登录就访问之后的页面）
+
+1、编写一个HandlerInterceptor的实现类
+
+```Java
+public class LoginHandleInterceptor implements HandlerInterceptor {
+    //目标方法执行之前
+    @Override
+    public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
+        Object user = request.getSession().getAttribute("loginUser");
+        if (user==null){
+            //未登录,返回登录页面
+            request.setAttribute("msg","没有权限,请先登录");
+            //请求转发
+            request.getRequestDispatcher("/index.html").forward(request,response);
+
+            return false;
+
+        }else {
+            //已登录,放行请求
+            return true;
+        }
+    }
+}
+```
+
+2、在配置类中去注册那个组件（实现类）
+
+```java
+
+@Configuration
+public class MyMvcConfig implements WebMvcConfigurer {
+  
+/**
+ * 静态资源如**.css **.js等SpringBoot已经做好静态资源映射,不需要做额外操作
+ * @param registry
+ */
+@Override
+public void addInterceptors(InterceptorRegistry registry) {
+    registry.addInterceptor(new LoginHandleInterceptor()).addPathPatterns("/**")
+      //需要排除一些登录所需的路径
+            .excludePathPatterns("/index.html","/","/user/login");
+}
+```
+
+## 5、CRUD-员工列表
+
+要求：
+
+* RestfulCRUD：CRUD要满足Rest风格
+  * URI：/资源名称/资源标识     HTTP请求方式区分对资源CRUD操作
+
+|      | 普通CRUD（uri来区分操作） | RestfulCRUD       |
+| ---- | ------------------------- | ----------------- |
+| 查询 | getEmp                    | emp---GET         |
+| 添加 | addEmp？xx                | emp---POST        |
+| 修改 | updateEmp？id=xxxx&xxx=xx | emp/{id}---PUT    |
+| 删除 | deleteEmp？id=1           | emp/{id}---DELETE |
+
+* 实验的请求架构：
+
+|                                    | 请求URI  | 请求方式 |
+| ---------------------------------- | -------- | -------- |
+| 查询所有员工                       | emps     | GET      |
+| 查询某个员工                       | emp/{id} | GET      |
+| 来到添加页面                       | emp      | GET      |
+| 添加员工                           | emp      | POST     |
+| 来到修改页面(查出员工进行信息回显) | emp/{id} | GET      |
+| 修改员工                           | emp      | PUT      |
+| 删除员工                           | emp/{id} | DELETE   |
+
+* 员工列表
+
+```html
+<li class="nav-item">
+    <a class="nav-link"
+       th:class="${activeUri}=='emps'?'nav-link active':'nav-link'"
+       href="https://getbootstrap.com/docs/4.1/examples/dashboard/#" th:href="@{/emps}">*******这里写访问的URI
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather feather-users"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+        员工管理
+    </a>
+</li>
+```
+
+在controller中
+
+```java
+@Controller
+public class EmployeeController {
+    @Autowired
+    EmployeeDao employeeDao;
+    @GetMapping("/emps")
+    public String list(Model model){
+        Collection<Employee> all = employeeDao.getAll();
+      //将得出的集合放入请求域中，由前端渲染
+        model.addAttribute("emps",all);
+        return "emp/list";
+    }
+}
+```
+
+## thymeleaf公共页面元素抽取
+
+```html
+1、抽取公共片段
+<div th:fragment="copy">
+  &copy;2011 The Good Thymes Virtual Grocery
+</div>
+2、引入公共片段
+<div th:insert="~{footer::copy}"></div>
+~{templatename::selector};模板名：：选择器
+~{templatename::fragmentname};模板名：：片段名
+3、默认效果：
+insert的功能片段在div标签中
+如果使用th:insert等属性进行引入，可以不用写~{};
+行内写法可以加上[[~{}]];[(~{})];
+
+```
+
+
+
+三种引入功能片段的th属性：
+
+* th:insert：将公共片段整个插入到声明引入的元素中
+* th:replace：将声明引入的元素替换为公共片段
+* th:include：将被引入的片段的内容包含进这个标签中
+
+```html
+<footer th:fragment="copy">
+  &copy;2011 The Good Thymes Virtual Grocery
+</footer>
+引入方式
+<div th:insert="footer::copy"></div>
+<div th:replace="footer::copy"></div>
+<div th:include="footer::copy"></div>
+
+效果：
+insert：
+<div>
+  <footer>
+   &copy;2011 The Good Thymes Virtual Grocery
+  </footer>
+</div>
+replace：
+<footer>
+   &copy;2011 The Good Thymes Virtual Grocery
+</footer>
+include：
+<div>
+   &copy;2011 The Good Thymes Virtual Grocery
+</div>
+```
 
