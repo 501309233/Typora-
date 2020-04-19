@@ -91,3 +91,7 @@ usage: run.py [-h] [-c DO_PREPROCESS] [-r RAW_RATING_DATA_PATH] [-i RAW_ITEM_DOC
  python3 run.py -d test/movielens-10m -a test/ml-10m/ -c True -r test/movielens-10m/ratings.dat -i test/movielens-10m/movies.dat -m 1
 
 python3 run.py -d test/movielens-1m -a test/ml-1m -u 100 -v 10 -o result-ml-1m
+
+
+
+ python3 run.py -d test/aiv/preprocessed/cf/0.2_1 -a test/aiv/preprocessed -u 1 -v 100 -o result-aiv2 -p test/glove.6B.200d.txt
