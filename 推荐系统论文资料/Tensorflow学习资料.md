@@ -127,6 +127,18 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 (train_image, train_label), (test_image, test_label) = tf.keras.datasets.fashion_mnist.load_data()
+train_image = train_image/255 # 表示每个元素都/255，把数据压缩在0-1
+test_image = test_image/255
 
+model = tf.keras.Sequential()
+model.add(tf.keras.layers.Flatten(input_shape=(28,28))) #28*28的图像扁平成1维数据
+model.add(tf.keras.layers.Dense(128, activation='relu'))
+model.add(tf.keras.layers.Dense(10, activation='softmax'))
+model.compile(optimizer='adam',
+              loss='sparse_categorical_crossentropy'
+              metrics=['acc'] # 度量正确率
+)
+model.fit(train_image,train_lable, epochs=5) # 训练
+model.evaluate(test_image,test_label) # 测试
 ```
 

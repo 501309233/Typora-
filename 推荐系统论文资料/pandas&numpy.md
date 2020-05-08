@@ -77,8 +77,203 @@ np.transpose(a) # 行列反转，将列变成行，行变成列
 a.T # 同上
 a.T.dot(a) # 矩阵反转之后与原矩阵叉乘
 np.clip(a, 5, 9) # 原矩阵中>5和<9的数不变，<5的变成5，>9的变成9
+```
 
+## numpy的索引
 
+## numpy的array合并
 
+## numpy的array分割
+
+## numpy的copy&deep copy
+
+# pandas
+
+## pandas的生成序列、矩阵以及查看矩阵、排序
+
+```python
+import pandas as pd
+import numpy as np
+s = pd.Series([1,3,6,np.nan,44,1]) # 生成一个序列
+dates = pd.date_range('20160101',periods=6) # 生成6个日期的序列
+df = pd.DataFrame(np.random.randn(6,4),index=dates,columns=['a','b','c','d']) # 生成6行4列数据，每一行数据名为dates，每一列的数据名为，a b c d
+df1 = pd.DataFrame(np.arange(12).reshape((3,4))) # 默认生成3行4列的矩阵，行名为0-n的数字，列名也一样
+df2 = pd.DataFrame({
+  'A':1., # A为列名，1为此列的所有内容为1
+  'B':pd.Timestamp('20130102'),
+  'C':pd.Series(1,index=list(range(4)),dtype='float32'),
+  'D':np.array([3]*4,dtype='int32'),
+  'E':pd.Categorical(['test','train','test','train']),
+  'F':'foo'
+})
+#结果为
+     A          B    C  D      E    F
+0  1.0 2013-01-02  1.0  3   test  foo
+1  1.0 2013-01-02  1.0  3  train  foo
+2  1.0 2013-01-02  1.0  3   test  foo
+3  1.0 2013-01-02  1.0  3  train  foo
+
+df2.dtypes # 打印所有列的类型
+df2.index # 返回所有行名
+df2.columns # 返回所有列名
+df2.values # 返回矩阵中所有值
+df2.describe() # 返回矩阵中数字构成的列的count,mean,std方差,min,占比,max
+df2.T # 矩阵反转，行转列，列转行
+df2.sort_index(axis=1,ascending=False) # axis=1表示针对行排序=0表示针对列，ascending=False表示倒序
+df2.sort_values(by='E') # 根据E列的值排序
+```
+
+## pandas选择数据
+
+```python
+import pandas as pd
+import numpy as np
+dates = pd.date_range('20130101', periods=6)
+df = pd.DataFrame(np.arange(24).reshape((6,4)),index=dates,columns=['A','B','C','D'])
+df['A'] # 输出A列数据
+df.A # 同上
+df[0:3] # df从0行到2行到数据
+df['20130102':'20130104'] # 筛选20130102行到20130104行
+df.loc['20130102'] # 20130102这个序列的数据
+df.loc[:,['A','B']] # A和B列数据
+df.iloc[3] # 第四行的数据
+df.iloc[3,1] # 第四行第二个数据
+df.iloc[3:5,1:3] # 第4-6行，第2-4列
+df.iloc[[1,3,5],1:3] # 第2，4，6行的2-4列
+df.ix[:3,['A','C']] # 筛选1-3行，A，C列的数据 已弃用
+df.[df.A>8] # 矩阵中，A列数据>8的所有数据
+```
+
+## pandas设置值
+
+```python
+import pandas as pd
+import numpy as np
+dates = pd.date_range('20130101', periods=6)
+df = pd.DataFrame(np.arange(24).reshape((6,4)),index=dates,columns=['A','B','C','D'])
+df.iloc[2,2] = 111 # 这个位置的值改为111
+df.loc['20130101','B'] = 2222
+df[df.A>4] = 0 # A列值大于4的所有值包括其他列都为0
+df.A[df.A>4] = 0 # A列值大于4的A列值都改为0
+df.B[df.A>4] = 0 # A列值大于4的B列值都改为0
+df['F'] = np.nan # 添加F列，所有值为nan
+# 定义一个列，然后加上去
+df['E'] = pd.Series([1,2,3,4,5,6],index=pd.date_range('20130101',periods=6))
+```
+
+## pandas处理丢失数据
+
+```python
+import pandas as pd
+import numpy as np
+dates = pd.date_range('20130101', periods=6)
+df = pd.DataFrame(np.arange(24).reshape((6,4)),index=dates,columns=['A','B','C','D'])
+df.iloc[0,1] = np.nan
+df.iloc[1,2] = np.nan
+
+df.dropna(axis=0, how='any') # how={'any','all'},any为出现nan就删除，all为全部为nan才删除，axis=0表示删除行，axis=1表示删除列
+df.fillna(value=0) # 所有nan填充为0
+df.isnull() # 返回矩阵每个数值是否为nan
+np.any(df.isnull()) == True # 这个矩阵是否包含True这个值(df矩阵是否存在nan)
+```
+
+## pandas导入导出数据
+
+```python
+import pandas as pd
+data = pd.read_csv('student.csv') # 读取
+data.to_pickle("student.pickle") # 导入
+```
+
+## pandas合并concat
+
+```python
+import pandas as pd
+import numpy as np
+# concatenating
+df1 = pd.DataFrame(np.ones((3,4))*0,columns=['a','b','c','d'])
+df2 = pd.DataFrame(np.ones((3,4))*1,columns=['a','b','c','d'])
+df3 = pd.DataFrame(np.ones((3,4))*2,columns=['a','b','c','d'])
+res = pd.concat([df1,df2,df3],axis=0) # axis=0纵向合并，axis=1横向合并
+res = pd.concat([df1,df2,df3],axis=0，ignore_index=True) # index（行名）会重新排序
+```
+
+```python
+import pandas as pd
+import numpy as np
+df1 = pd.DataFrame(np.ones((3,4))*0,columns=['a','b','c','d'],index=[1,2,3])
+df2 = pd.DataFrame(np.ones((3,4))*1,columns=['b','c','d','e'],index=[2,3,4])
+res = pd.concat([df1,df2],join='outer')
+# join为outer为扩展，inner为裁切
+     a    b    c    d    e
+1  0.0  0.0  0.0  0.0  NaN
+2  0.0  0.0  0.0  0.0  NaN
+3  0.0  0.0  0.0  0.0  NaN
+2  NaN  1.0  1.0  1.0  1.0
+3  NaN  1.0  1.0  1.0  1.0
+4  NaN  1.0  1.0  1.0  1.0
+# 裁切
+res = pd.concat([df1,df2],join='inner',ignore_index = True)
+     b    c    d
+0  0.0  0.0  0.0
+1  0.0  0.0  0.0
+2  0.0  0.0  0.0
+3  1.0  1.0  1.0
+4  1.0  1.0  1.0
+5  1.0  1.0  1.0
+
+# axis=1 左右合并，join_axes以df1的index为准，没有的填充nan
+res = pd.concat([df1, df2], axis=1, join_axes=[df1.index]) # 可能会报错
+# TypeError: concat() got an unexpected keyword argument 'join_axes'
+res = pd.concat([df1, df2.reindex(df1.index)], axis=1) #这个不会报错
+     a    b    c    d    b    c    d    e
+1  0.0  0.0  0.0  0.0  NaN  NaN  NaN  NaN
+2  0.0  0.0  0.0  0.0  1.0  1.0  1.0  1.0
+3  0.0  0.0  0.0  0.0  1.0  1.0  1.0  1.0
+
+res = df1.append([df2,df3],ignore_index=True)
+
+```
+
+## pandas合并merge
+
+```python
+import pandas as pd
+left = pd.DataFrame({'key':['k0','k1','k2','k3'],
+                    'A':['a0','a1','a2','a3'],
+                    'B':['b0','b1','b2','b3']})
+right = pd.DataFrame({'key':['k0','k1','k2','k3'],
+                    'C':['c0','c1','c2','c3'],
+                    'D':['d0','d1','d2','d3']})
+res = pd.merge(left,right,on = 'key') # 基于key进行合并
+
+```
+
+## pandas plot画图
+
+```python
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+
+#Series
+data = pd.Series(np.random.randn(1000),index = np.arange(1000))
+data = data.cumsum()
+data.plot()
+plt.show()
+
+#DataFrame
+data = pd.DataFrame(np.random.randn(1000,4),
+                   index=np.arange(1000),
+                   columns=list('abcd'))
+data = data.cumsum()
+data.plot()
+plt.show()
+#plot methods:
+# 'bar'条状，'hist' ,'box', 'kde' 'area' 'scatter'点
+data=data.cumsum()
+ax = data.plot.scatter(x='a',y='b',color='DarkBlue',label='Class 1')
+data.plot.scatter(x='a',y='b',color='DarkGreen',label='Class 2',ax=ax)
+plt.show()
 ```
 
