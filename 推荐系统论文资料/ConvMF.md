@@ -1,4 +1,4 @@
-do_preprocess: True或False，用于对ConvMF的原始数据进行预处理。
+ do_preprocess: True或False，用于对ConvMF的原始数据进行预处理。
 
 raw_rating_data_path:原始评级数据路径的路径。数据格式应该是用户id::item id::rating。
 
@@ -20,7 +20,7 @@ res_dir:指向ConvMF结果的路径
 
 emb_dim:字向量的潜在维度大小。
 
-pretrain_w2v:用于初始化字向量的预训练字嵌入模型的路径。
+pretrain_w2v:用于初始化字向量的预训练字嵌入模型的路径。word to vector
 
 give_item_weight:为R-ConvMF赋值时为真或假。
 
@@ -57,7 +57,7 @@ usage: run.py [-h] [-c DO_PREPROCESS] [-r RAW_RATING_DATA_PATH] [-i RAW_ITEM_DOC
 
 | ' -m '， '——min_rating ' | {} |
 
-——max_length_document <整数> ' | 300 |
+-l ——max_length_document <整数> ' | 300 |
 
 | ' -f '， '——max_df ' | 0.5 |
 
